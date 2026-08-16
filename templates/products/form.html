@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if product else 'Nuevo' }} Producto{% endblock %}
+{% block page_title %}{{ 'Editar producto' if product else 'Nuevo producto' }}{% endblock %}
+
+{% block content %}
+<div class="card form-card mx-auto">
+  <div class="card-header">
+    <i class="bi bi-box-seam me-2 text-primary"></i>
+    {{ 'Editar: ' + product.name if product else 'Crear nuevo producto' }}
+  </div>
+  <div class="card-body p-4">
+    <form method="POST">
+      <div class="row g-3">
+
+        <div class="col-md-8">
+          <label class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control"
+                 value="{{ product.name if product else '' }}"
+                 placeholder="Ej: Bidón 20 litros" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Capacidad</label>
+          <input type="text" name="capacity" class="form-control"
+                 value="{{ product.capacity if product else '' }}"
+                 placeholder="Ej: 20L, 600cc">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Categoría <span class="text-danger">*</span></label>
+          <select name="category_id" class="form-select" required>
+            <option value="">Seleccionar categoría...</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}"
+              {% if product and product.category_id == cat.id %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Unidad de medida</label>
+          <select name="unit" class="form-select">
+            {% for u in ['unidad', 'botella', 'bidón', 'equipo', 'caja'] %}
+            <option value="{{ u }}"
+              {% if product and product.unit == u %}selected
+              {% elif not product and u == 'unidad' %}selected{% endif %}>
+              {{ u }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Stock mínimo</label>
+          <input type="number" name="min_stock" class="form-control" min="0"
+                 value="{{ product.min_stock if product else 0 }}">
+          <div class="form-text">Alerta cuando el stock sea ≤ este valor.</div>
+        </div>
+
+        {% if not product %}
+        <div class="col-md-4">
+          <label class="form-label">Stock inicial</label>
+          <input type="number" name="initial_stock" class="form-control" min="0" value="0">
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+          <label class="form-label d-block">Envase retornable</label>
+          <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" name="is_returnable"
+                   id="isReturnable" role="switch"
+                   {% if product and product.is_returnable %}checked{% endif %}>
+            <label class="form-check-label" for="isReturnable">
+              Sí, este producto usa envases retornables
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>
+          {{ 'Guardar cambios' if product else 'Crear producto' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

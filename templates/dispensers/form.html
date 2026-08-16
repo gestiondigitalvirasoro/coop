@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if dispenser else 'Nuevo' }} Dispenser{% endblock %}
+{% block page_title %}{{ 'Editar dispenser' if dispenser else 'Dar de alta dispenser' }}{% endblock %}
+
+{% block content %}
+<div class="card form-card mx-auto" style="max-width:500px">
+  <div class="card-header">
+    <i class="bi bi-upc-scan me-2 text-primary"></i>
+    {{ dispenser.code if dispenser else 'Nuevo dispenser (por código)' }}
+  </div>
+  <div class="card-body p-4">
+    <form method="POST">
+      {% if not dispenser %}
+      <div class="mb-3">
+        <label class="form-label">Código / Número de serie <span class="text-danger">*</span></label>
+        <input type="text" name="code" class="form-control font-monospace"
+               placeholder="Ej: 457626, ejecutivo, 349559..." required autofocus>
+        <div class="form-text">El número grabado en el equipo o un nombre identificatorio.</div>
+      </div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label class="form-label">Modelo</label>
+        <select name="model" class="form-select">
+          {% for m in models %}
+          <option value="{{ m }}"
+            {% if dispenser and dispenser.model == m %}selected
+            {% elif not dispenser and m == 'VIP' %}selected{% endif %}>
+            {{ m }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Notas</label>
+        <textarea name="notes" class="form-control" rows="2"
+                  placeholder="Observaciones del equipo, estado, etc.">{{ dispenser.notes if dispenser else '' }}</textarea>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{{ url_for('dispensers.index') }}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>{{ 'Guardar' if dispenser else 'Dar de alta' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

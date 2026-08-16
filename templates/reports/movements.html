@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Historial de Movimientos{% endblock %}
+{% block page_title %}Historial de movimientos{% endblock %}
+
+{% block content %}
+
+<!-- Filtros -->
+<div class="card data-card mb-4">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label smaller mb-1">Producto</label>
+        <select name="product_id" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if product_filter == p.id|string %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label smaller mb-1">Tipo</label>
+        <select name="movement_type" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for key, label in movement_types.items() %}
+          <option value="{{ key }}" {% if movement_type_filter == key %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label smaller mb-1">Desde</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label smaller mb-1">Hasta</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
+        <a href="{{ url_for('reports.movements') }}" class="btn btn-sm btn-outline-secondary ms-1">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card data-card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>
+      <i class="bi bi-clock-history me-2 text-secondary"></i>Movimientos de stock
+      <span class="badge bg-secondary ms-1">{{ movements|length }}</span>
+    </span>
+    <span class="text-muted smaller">Máximo 500 resultados</span>
+  </div>
+  <div class="card-body p-0">
+    {% if movements %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 small">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Tipo de movimiento</th>
+            <th class="text-end">Cantidad</th>
+            <th class="text-end">Stock resultante</th>
+            <th>Notas</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in movements %}
+          <tr>
+            <td class="text-nowrap">{{ m.date.strftime('%d/%m/%Y') }}</td>
+            <td class="fw-500">{{ m.product.name }}</td>
+            <td>
+              <span class="badge bg-light text-dark border smaller">{{ m.product.category.name }}</span>
+            </td>
+            <td>
+              <span class="badge bg-{{ m.direction_color }} bg-opacity-75">{{ m.type_label }}</span>
+            </td>
+            <td class="text-end fw-500 text-{{ m.direction_color }}">
+              {% if m.direction == 'entrada' %}
+              <i class="bi bi-arrow-up-circle"></i> +{{ m.quantity }}
+              {% else %}
+              <i class="bi bi-arrow-down-circle"></i> -{{ m.quantity }}
+              {% endif %}
+            </td>
+            <td class="text-end">{{ m.balance_after }}</td>
+            <td class="text-muted">{{ m.notes or '—' }}</td>
+            <td class="text-muted">{{ m.user.username if m.user else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted p-5">
+      <i class="bi bi-clock-history display-4 d-block mb-2"></i>
+      Sin movimientos con el filtro aplicado.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

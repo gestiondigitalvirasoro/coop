@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Rotura{% endblock %}
+{% block page_title %}Registrar rotura / baja{% endblock %}
+
+{% block content %}
+<div class="card form-card mx-auto">
+  <div class="card-header">
+    <i class="bi bi-trash3 me-2 text-danger"></i>Nueva baja de stock por rotura o pérdida
+  </div>
+  <div class="card-body p-4">
+    <form method="POST">
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label class="form-label">Fecha <span class="text-danger">*</span></label>
+          <input type="date" name="date" class="form-control"
+                 value="{{ today.strftime('%Y-%m-%d') }}" required>
+        </div>
+
+        <div class="col-md-5">
+          <label class="form-label">Producto <span class="text-danger">*</span></label>
+          <select name="product_id" class="form-select" required>
+            <option value="">Seleccionar producto...</option>
+            {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} — Stock: {{ p.stock }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+          <input type="number" name="quantity" class="form-control" min="1" required>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Motivo <span class="text-danger">*</span></label>
+          <select name="reason" class="form-select" required>
+            <option value="">Seleccionar motivo...</option>
+            {% for r in reasons %}
+            <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Descripción adicional</label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="Detalles sobre la pérdida, circunstancias, etc."></textarea>
+        </div>
+
+      </div>
+
+      <hr class="my-4">
+      <div class="alert alert-danger smaller mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Al guardar, la cantidad indicada se <strong>descontará</strong> del stock del producto.
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{{ url_for('breakage.index') }}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">
+          <i class="bi bi-check-lg me-1"></i>Registrar baja
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

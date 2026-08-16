@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Ventas en Planta{% endblock %}
+{% block page_title %}Ventas en Planta{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('sales.create') }}" class="btn btn-sm btn-primary">
+  <i class="bi bi-plus-lg me-1"></i>Nueva venta
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card stat-card border-start border-success border-3">
+      <div class="card-body">
+        <div class="stat-value text-success">{{ total_sold }}</div>
+        <div class="stat-label">Total vendido (filtro actual)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card data-card mb-4">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label smaller mb-1">Producto</label>
+        <select name="product_id" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if product_filter == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label smaller mb-1">Desde</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label smaller mb-1">Hasta</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
+        <a href="{{ url_for('sales.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card data-card">
+  <div class="card-header">
+    <i class="bi bi-cart3 me-2 text-success"></i>Ventas en planta
+  </div>
+  <div class="card-body p-0">
+    {% if sales %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha</th><th>Producto</th><th>Cliente</th>
+            <th>Tipo</th><th class="text-end">Cantidad</th>
+            <th>Notas</th><th>Registrado por</th>
+            {% if current_user.is_admin %}<th class="text-end">Acción</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sales %}
+          <tr>
+            <td>{{ s.date.strftime('%d/%m/%Y') }}</td>
+            <td class="fw-500">{{ s.product.name }}</td>
+            <td>{{ s.client_name or '—' }}</td>
+            <td>
+              <span class="badge {% if s.sale_type == 'contado' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                {{ s.sale_type|capitalize }}
+              </span>
+            </td>
+            <td class="text-end fw-500 text-danger">-{{ s.quantity }}</td>
+            <td class="text-muted smaller">{{ s.notes or '—' }}</td>
+            <td class="text-muted smaller">{{ s.user.username if s.user else '—' }}</td>
+            {% if current_user.is_admin %}
+            <td class="text-end">
+              <form method="POST" action="{{ url_for('sales.delete', id=s.id) }}"
+                    onsubmit="return confirm('¿Eliminar esta venta y revertir el stock?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted p-5">
+      <i class="bi bi-cart3 display-4 d-block mb-2"></i>Sin ventas registradas.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

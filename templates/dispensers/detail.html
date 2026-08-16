@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}Dispenser {{ dispenser.code }}{% endblock %}
+{% block page_title %}Dispenser — {{ dispenser.code }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Info + formulario de movimiento -->
+  <div class="col-md-5">
+
+    <!-- Info card -->
+    <div class="card data-card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-info-circle me-2"></i>Datos del equipo</span>
+        <a href="{{ url_for('dispensers.edit', id=dispenser.id) }}"
+           class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-pencil"></i>
+        </a>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">Código</dt>
+          <dd class="col-7 fw-500 font-monospace">{{ dispenser.code }}</dd>
+
+          <dt class="col-5 text-muted">Modelo</dt>
+          <dd class="col-7">{{ dispenser.model }}</dd>
+
+          <dt class="col-5 text-muted">Estado</dt>
+          <dd class="col-7">
+            <span class="badge bg-{{ dispenser.status_color }} fs-6">
+              {{ dispenser.status_label }}
+            </span>
+          </dd>
+
+          {% if dispenser.current_client %}
+          <dt class="col-5 text-muted">Cliente</dt>
+          <dd class="col-7">{{ dispenser.current_client }}</dd>
+          {% endif %}
+
+          {% if dispenser.current_vehicle %}
+          <dt class="col-5 text-muted">Móvil</dt>
+          <dd class="col-7">{{ dispenser.current_vehicle.code }}</dd>
+          {% endif %}
+
+          {% if dispenser.notes %}
+          <dt class="col-5 text-muted">Notas</dt>
+          <dd class="col-7 smaller">{{ dispenser.notes }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    <!-- Formulario de movimiento -->
+    <div class="card data-card" id="mov">
+      <div class="card-header">
+        <i class="bi bi-arrow-left-right me-2 text-primary"></i>Registrar movimiento
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('dispensers.add_movement', id=dispenser.id) }}">
+          <div class="mb-3">
+            <label class="form-label">Tipo de movimiento <span class="text-danger">*</span></label>
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="movement_type"
+                       id="r_salida" value="salida"
+                       {% if dispenser.status != 'campo' %}checked{% endif %}>
+                <label class="form-check-label" for="r_salida">
+                  <i class="bi bi-arrow-up-right-circle text-warning me-1"></i>Salida a cliente
+                </label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="movement_type"
+                       id="r_entrada" value="entrada"
+                       {% if dispenser.status == 'campo' %}checked{% endif %}>
+                <label class="form-check-label" for="r_entrada">
+                  <i class="bi bi-arrow-down-left-circle text-success me-1"></i>Retorno / entrada
+                </label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="movement_type"
+                       id="r_taller" value="taller">
+                <label class="form-check-label" for="r_taller">
+                  <i class="bi bi-tools text-secondary me-1"></i>Taller
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="date" class="form-control form-control-sm"
+                   value="{{ now.strftime('%Y-%m-%d') }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Móvil</label>
+            <select name="vehicle_id" class="form-select form-select-sm">
+              <option value="">Sin móvil</option>
+              {% for v in vehicles %}
+              <option value="{{ v.id }}"
+                {% if dispenser.current_vehicle and dispenser.current_vehicle.id == v.id %}selected{% endif %}>
+                {{ v.code }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <input type="text" name="client_name" class="form-control form-control-sm"
+                   value="{{ dispenser.current_client or '' }}"
+                   placeholder="Nombre del cliente"
+                   list="clients-list" autocomplete="off">
+            <datalist id="clients-list">
+              {% for c in known_clients %}
+              <option value="{{ c }}">
+              {% endfor %}
+            </datalist>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Notas</label>
+            <input type="text" name="notes" class="form-control form-control-sm"
+                   placeholder="Observaciones opcionales">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-check-lg me-1"></i>Confirmar movimiento
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Historial -->
+  <div class="col-md-7">
+    <div class="card data-card">
+      <div class="card-header">
+        <i class="bi bi-clock-history me-2 text-secondary"></i>Historial completo
+        <span class="badge bg-secondary ms-1">{{ dispenser.movements|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% if dispenser.movements %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Movimiento</th>
+                <th>Móvil</th>
+                <th>Cliente</th>
+                <th>Notas</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in dispenser.movements %}
+              <tr>
+                <td class="text-nowrap">{{ m.date.strftime('%d/%m/%Y') }}</td>
+                <td>
+                  <span class="badge bg-{{ m.type_color }}">{{ m.type_label }}</span>
+                </td>
+                <td>{{ m.vehicle.code if m.vehicle else '—' }}</td>
+                <td>{{ m.client_name or '—' }}</td>
+                <td class="text-muted">{{ m.notes or '—' }}</td>
+                <td class="text-muted">{{ m.user.username if m.user else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted p-4">Sin movimientos registrados.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <a href="{{ url_for('dispensers.index') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Volver
+      </a>
+      {% if current_user.is_admin %}
+      <form method="POST" action="{{ url_for('dispensers.delete', id=dispenser.id) }}"
+            class="d-inline ms-2"
+            onsubmit="return confirm('¿Dar de baja este dispenser?')">
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-trash me-1"></i>Dar de baja
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

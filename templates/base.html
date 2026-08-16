@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — Cooperativa de Agua</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <a href="{{ url_for('dashboard.index') }}" class="sidebar-brand">
+      <div class="sidebar-brand-icon">
+        <i class="bi bi-droplet-half text-white fs-5"></i>
+      </div>
+      <div>
+        <div class="sidebar-brand-name">Cooperativa</div>
+        <div class="sidebar-brand-sub">Gestión de Agua</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="sidebar-nav">
+    <ul class="nav flex-column">
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
+           href="{{ url_for('dashboard.index') }}">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+
+      <li><div class="nav-section-label">Gestión</div></li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'products' %}active{% endif %}"
+           href="{{ url_for('products.index') }}">
+          <i class="bi bi-box-seam"></i> Productos
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'production' %}active{% endif %}"
+           href="{{ url_for('production.index') }}">
+          <i class="bi bi-gear-fill"></i> Producción
+        </a>
+      </li>
+
+      <li><div class="nav-section-label">Distribución</div></li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'distribution' %}active{% endif %}"
+           href="{{ url_for('distribution.index') }}">
+          <i class="bi bi-truck"></i> Móviles / Repartos
+        </a>
+      </li>
+
+      <li><div class="nav-section-label">Ventas</div></li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'sales' %}active{% endif %}"
+           href="{{ url_for('sales.index') }}">
+          <i class="bi bi-cart3"></i> Ventas en Planta
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'breakage' %}active{% endif %}"
+           href="{{ url_for('breakage.index') }}">
+          <i class="bi bi-trash3"></i> Roturas / Bajas
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'dispensers' %}active{% endif %}"
+           href="{{ url_for('dispensers.index') }}">
+          <i class="bi bi-water"></i> Dispensers
+        </a>
+      </li>
+
+      <li><div class="nav-section-label">Análisis</div></li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.blueprint == 'reports' %}active{% endif %}"
+           href="{{ url_for('reports.index') }}">
+          <i class="bi bi-bar-chart-line"></i> Reportes
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'reports.movements' %}active{% endif %}"
+           href="{{ url_for('reports.movements') }}">
+          <i class="bi bi-clock-history"></i> Historial de Movimientos
+        </a>
+      </li>
+
+      {% if current_user.is_admin %}
+      <li><div class="nav-section-label">Administración</div></li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'products.categories' %}active{% endif %}"
+           href="{{ url_for('products.categories') }}">
+          <i class="bi bi-tags"></i> Categorías
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'products.vehicles' %}active{% endif %}"
+           href="{{ url_for('products.vehicles') }}">
+          <i class="bi bi-truck-front"></i> Móviles y Choferes
+        </a>
+      </li>
+      {% endif %}
+
+    </ul>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-brand-icon" style="width:34px;height:34px;">
+      <i class="bi bi-person-fill text-white"></i>
+    </div>
+    <div class="flex-grow-1 overflow-hidden">
+      <div class="sidebar-user-name">{{ current_user.username }}</div>
+      <div class="sidebar-user-role">{{ current_user.role }}</div>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light flex-shrink-0"
+       title="Cerrar sesión">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
+  </div>
+</nav>
+
+<!-- ── Main content ──────────────────────────────────────────────────────── -->
+<div class="main-content" id="mainContent">
+
+  <header class="top-bar">
+    <button class="btn btn-sm btn-light" id="sidebarToggle">
+      <i class="bi bi-list fs-5"></i>
+    </button>
+    <span class="page-title">{% block page_title %}{% endblock %}</span>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <span class="text-muted smaller d-none d-md-inline">
+        <i class="bi bi-calendar3 me-1"></i>{{ now.strftime('%d/%m/%Y') }}
+      </span>
+      {% block topbar_actions %}{% endblock %}
+    </div>
+  </header>
+
+  <div class="content-area">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {% if category == 'success' %}<i class="bi bi-check-circle me-2"></i>
+            {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle me-2"></i>
+            {% elif category == 'warning' %}<i class="bi bi-exclamation-circle me-2"></i>
+            {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('mainContent');
+  document.getElementById('sidebarToggle').addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle('show');
+    } else {
+      sidebar.classList.toggle('collapsed');
+      main.classList.toggle('expanded');
+    }
+  });
+
+  // Auto-dismiss alerts after 5 s
+  setTimeout(() => {
+    document.querySelectorAll('.alert.fade.show').forEach(el => {
+      bootstrap.Alert.getOrCreateInstance(el).close();
+    });
+  }, 5000);
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

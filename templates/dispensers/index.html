@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block title %}Dispensers{% endblock %}
+{% block page_title %}Dispensers{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('dispensers.create') }}" class="btn btn-sm btn-primary">
+  <i class="bi bi-plus-lg me-1"></i>Nuevo dispenser
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Selector de modo ────────────────────────────────────────────────────── -->
+<div class="d-flex gap-2 mb-4">
+  <a href="{{ url_for('dispensers.index', mode='codigo') }}"
+     class="btn {% if mode == 'codigo' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+    <i class="bi bi-upc-scan me-2"></i>Por código (número de serie)
+  </a>
+  <a href="{{ url_for('dispensers.index', mode='volumen') }}"
+     class="btn {% if mode == 'volumen' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+    <i class="bi bi-boxes me-2"></i>Por volumen (cantidad)
+  </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+{% if mode == 'codigo' %}
+<!-- ── MODO POR CÓDIGO ──────────────────────────────────────────────────── -->
+
+<!-- Resumen -->
+<div class="row g-3 mb-4">
+  <div class="col-4">
+    <div class="card stat-card border-start border-success border-3">
+      <div class="card-body">
+        <div class="stat-value text-success">{{ total_deposito }}</div>
+        <div class="stat-label">En depósito</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card stat-card border-start border-warning border-3">
+      <div class="card-body">
+        <div class="stat-value text-warning">{{ total_campo }}</div>
+        <div class="stat-label">En campo (cliente)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card stat-card border-start border-secondary border-3">
+      <div class="card-body">
+        <div class="stat-value text-secondary">{{ total_taller }}</div>
+        <div class="stat-label">En taller</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card data-card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <span class="text-muted smaller">Filtrar por estado:</span>
+      <a href="{{ url_for('dispensers.index', mode='codigo') }}"
+         class="btn btn-sm {% if not status_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        Todos
+      </a>
+      <a href="{{ url_for('dispensers.index', mode='codigo', status='deposito') }}"
+         class="btn btn-sm {% if status_filter == 'deposito' %}btn-success{% else %}btn-outline-success{% endif %}">
+        Depósito
+      </a>
+      <a href="{{ url_for('dispensers.index', mode='codigo', status='campo') }}"
+         class="btn btn-sm {% if status_filter == 'campo' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+        Campo
+      </a>
+      <a href="{{ url_for('dispensers.index', mode='codigo', status='taller') }}"
+         class="btn btn-sm {% if status_filter == 'taller' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        Taller
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card data-card">
+  <div class="card-header">
+    <i class="bi bi-upc-scan me-2 text-primary"></i>Dispensers por código
+    <span class="badge bg-secondary ms-1">{{ dispensers|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if dispensers %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Código / Serie</th>
+            <th>Modelo</th>
+            <th>Estado</th>
+            <th>Cliente actual</th>
+            <th>Móvil</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in dispensers %}
+          <tr>
+            <td class="fw-500 font-monospace">{{ d.code }}</td>
+            <td>{{ d.model }}</td>
+            <td>
+              <span class="badge bg-{{ d.status_color }}">{{ d.status_label }}</span>
+            </td>
+            <td>{{ d.current_client or '—' }}</td>
+            <td>{{ d.current_vehicle.code if d.current_vehicle else '—' }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('dispensers.detail', id=d.id) }}"
+                   class="btn btn-outline-secondary" title="Ver detalle e historial">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if d.status != 'campo' %}
+                <a href="{{ url_for('dispensers.detail', id=d.id) }}#mov"
+                   class="btn btn-outline-warning" title="Enviar a cliente">
+                  <i class="bi bi-arrow-up-right-circle"></i>
+                </a>
+                {% else %}
+                <a href="{{ url_for('dispensers.detail', id=d.id) }}#mov"
+                   class="btn btn-outline-success" title="Registrar retorno">
+                  <i class="bi bi-arrow-down-left-circle"></i>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted p-5">
+      <i class="bi bi-upc-scan display-4 d-block mb-2"></i>
+      Sin dispensers registrados.
+      <div class="mt-2">
+        <a href="{{ url_for('dispensers.create') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-lg me-1"></i>Dar de alta el primero
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+{% else %}
+<!-- ── MODO POR VOLUMEN ─────────────────────────────────────────────────── -->
+
+<!-- Stock actual -->
+<div class="row g-3 mb-4">
+  {% for p in vol_products %}
+  <div class="col-md-3">
+    <div class="card stat-card border-start border-{{ p.stock_status }} border-3">
+      <div class="card-body">
+        <div class="stat-value text-{{ p.stock_status }}">{{ p.stock }}</div>
+        <div class="stat-label">{{ p.name }}</div>
+        <span class="badge bg-{{ p.stock_status }} mt-1">{{ p.stock_badge }}</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Formulario de movimiento por volumen -->
+<div class="card form-card mx-auto" style="max-width:700px">
+  <div class="card-header">
+    <i class="bi bi-boxes me-2 text-primary"></i>Registrar movimiento de dispenser (por cantidad)
+  </div>
+  <div class="card-body p-4">
+    <form method="POST" action="{{ url_for('dispensers.vol_movement') }}">
+      <div class="row g-3">
+
+        <div class="col-md-4">
+          <label class="form-label">Fecha</label>
+          <input type="date" name="date" class="form-control"
+                 value="{{ now.strftime('%Y-%m-%d') }}" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Producto <span class="text-danger">*</span></label>
+          <select name="product_id" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            {% for p in vol_products %}
+            <option value="{{ p.id }}">{{ p.name }} (stock: {{ p.stock }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Tipo <span class="text-danger">*</span></label>
+          <select name="direction" class="form-select" required>
+            <option value="salida">Salida (va al campo)</option>
+            <option value="entrada">Entrada (vuelve al depósito)</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+          <input type="number" name="quantity" class="form-control" min="1" required>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Móvil</label>
+          <select name="vehicle_id" class="form-select">
+            <option value="">Sin móvil</option>
+            {% for v in vehicles %}
+            <option value="{{ v.id }}">{{ v.code }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Cliente</label>
+          <input type="text" name="client_name" class="form-control"
+                 placeholder="Nombre del cliente"
+                 list="clients-list-vol" autocomplete="off">
+          <datalist id="clients-list-vol">
+            {% for c in known_clients %}
+            <option value="{{ c }}">
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Notas</label>
+          <input type="text" name="notes" class="form-control" placeholder="Observaciones">
+        </div>
+
+      </div>
+      <hr class="my-3">
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>Registrar movimiento
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Historial de movimientos de dispensers por volumen -->
+<div class="card data-card mt-4">
+  <div class="card-header">
+    <i class="bi bi-clock-history me-2 text-secondary"></i>Historial (últimos movimientos)
+  </div>
+  <div class="card-body p-0">
+    {% from 'models' import StockMovement %}
+    {% set disp_product_ids = vol_products | map(attribute='id') | list %}
+    <div class="text-center text-muted p-3 smaller">
+      Ver historial completo en
+      <a href="{{ url_for('reports.movements') }}">Historial de Movimientos</a>
+      filtrando por el producto dispenser.
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

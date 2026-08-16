@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Roturas / Bajas{% endblock %}
+{% block page_title %}Roturas / Bajas{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('breakage.create') }}" class="btn btn-sm btn-danger">
+  <i class="bi bi-plus-lg me-1"></i>Registrar rotura
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card stat-card border-start border-danger border-3">
+      <div class="card-body">
+        <div class="stat-value text-danger">{{ total_lost }}</div>
+        <div class="stat-label">Total pérdidas (filtro actual)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="card data-card mb-4">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label smaller mb-1">Producto</label>
+        <select name="product_id" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for p in products %}
+          <option value="{{ p.id }}" {% if product_filter == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label smaller mb-1">Desde</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label smaller mb-1">Hasta</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
+        <a href="{{ url_for('breakage.index') }}" class="btn btn-sm btn-outline-secondary ms-1">Limpiar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card data-card">
+  <div class="card-header">
+    <i class="bi bi-trash3 me-2 text-danger"></i>Registros de rotura / baja
+  </div>
+  <div class="card-body p-0">
+    {% if breakages %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha</th><th>Producto</th><th>Motivo</th>
+            <th class="text-end">Cantidad</th><th>Notas</th>
+            <th>Registrado por</th>
+            {% if current_user.is_admin %}<th class="text-end">Acción</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in breakages %}
+          <tr>
+            <td>{{ b.date.strftime('%d/%m/%Y') }}</td>
+            <td class="fw-500">{{ b.product.name }}</td>
+            <td>{{ b.reason or '—' }}</td>
+            <td class="text-end fw-500 text-danger">-{{ b.quantity }}</td>
+            <td class="text-muted smaller">{{ b.notes or '—' }}</td>
+            <td class="text-muted smaller">{{ b.user.username if b.user else '—' }}</td>
+            {% if current_user.is_admin %}
+            <td class="text-end">
+              <form method="POST" action="{{ url_for('breakage.delete', id=b.id) }}"
+                    onsubmit="return confirm('¿Eliminar y revertir stock?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted p-5">
+      <i class="bi bi-check-circle display-4 d-block mb-2 text-success"></i>Sin roturas registradas.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Devolución{% endblock %}
+{% block page_title %}Registrar devolución — {{ dist.vehicle.code }}{% endblock %}
+
+{% block content %}
+<div class="card form-card mx-auto" style="max-width:860px">
+  <div class="card-header">
+    <i class="bi bi-arrow-return-left me-2 text-success"></i>
+    Devolución del {{ dist.date.strftime('%d/%m/%Y') }} — {{ dist.driver.name }}
+  </div>
+  <div class="card-body p-4">
+
+    <div class="alert alert-info smaller mb-4">
+      <i class="bi bi-info-circle me-2"></i>
+      Ingresá cuántos productos <strong>llenos (sin vender)</strong> regresan y cuántos
+      <strong>envases vacíos</strong> retornan. La diferencia se calculará automáticamente
+      como <em>retornables pendientes</em>.
+    </div>
+
+    <form method="POST">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th class="text-center">Ret.</th>
+              <th class="text-end">Enviado</th>
+              <th class="text-end" style="width:150px">
+                <span class="text-info">Dev. llenos</span>
+                <div class="smaller text-muted fw-normal">sin vender</div>
+              </th>
+              <th class="text-end" style="width:150px">
+                <span class="text-secondary">Env. vacíos</span>
+                <div class="smaller text-muted fw-normal">retornables</div>
+              </th>
+              <th class="text-end">Vendidos (calc.)</th>
+              <th class="text-end">Pendiente</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in dist.items %}
+            <tr class="return-row" data-sent="{{ item.qty_sent }}"
+                data-returnable="{{ 'true' if item.product.is_returnable else 'false' }}"
+                data-id="{{ item.id }}">
+              <td class="fw-500">{{ item.product.name }}</td>
+              <td class="text-center">
+                {% if item.product.is_returnable %}
+                <i class="bi bi-arrow-repeat text-info"></i>{% else %}—{% endif %}
+              </td>
+              <td class="text-end fw-500">{{ item.qty_sent }}</td>
+              <td class="text-end">
+                <input type="number" name="returned_full_{{ item.id }}"
+                       class="form-control form-control-sm text-end returned-full"
+                       min="0" max="{{ item.qty_sent }}" value="0"
+                       style="width:100px;margin-left:auto">
+              </td>
+              <td class="text-end">
+                {% if item.product.is_returnable %}
+                <input type="number" name="returned_empty_{{ item.id }}"
+                       class="form-control form-control-sm text-end returned-empty"
+                       min="0" max="{{ item.qty_sent }}" value="0"
+                       style="width:100px;margin-left:auto">
+                {% else %}
+                <span class="text-muted">—</span>
+                <input type="hidden" name="returned_empty_{{ item.id }}" value="0">
+                {% endif %}
+              </td>
+              <td class="text-end fw-500 sold-calc">—</td>
+              <td class="text-end pending-calc">—</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{{ url_for('distribution.detail', id=dist.id) }}" class="btn btn-secondary">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-check-lg me-1"></i>Confirmar devolución
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function recalcRow(row) {
+    const sent = parseInt(row.dataset.sent);
+    const fullInput = row.querySelector('.returned-full');
+    const emptyInput = row.querySelector('.returned-empty');
+    const soldCell = row.querySelector('.sold-calc');
+    const pendingCell = row.querySelector('.pending-calc');
+    const isReturnable = row.dataset.returnable === 'true';
+
+    const full = parseInt(fullInput?.value || 0);
+    const empty = emptyInput ? parseInt(emptyInput.value || 0) : 0;
+
+    const sold = sent - full;
+    const pending = isReturnable ? Math.max(0, sent - full - empty) : 0;
+
+    soldCell.textContent = sold >= 0 ? sold : '?';
+    soldCell.className = 'text-end fw-500 sold-calc ' + (sold < 0 ? 'text-danger' : 'text-success');
+
+    if (isReturnable) {
+      pendingCell.innerHTML = pending > 0
+        ? `<span class="badge bg-danger">${pending}</span>`
+        : '<span class="text-muted">0</span>';
+    } else {
+      pendingCell.textContent = '—';
+    }
+
+    if (full + empty > sent) {
+      fullInput.classList.add('is-invalid');
+      if (emptyInput) emptyInput.classList.add('is-invalid');
+    } else {
+      fullInput.classList.remove('is-invalid');
+      if (emptyInput) emptyInput.classList.remove('is-invalid');
+    }
+  }
+
+  document.querySelectorAll('.return-row').forEach(row => {
+    row.querySelectorAll('input[type=number]').forEach(input => {
+      input.addEventListener('input', () => recalcRow(row));
+    });
+    recalcRow(row);
+  });
+</script>
+{% endblock %}
